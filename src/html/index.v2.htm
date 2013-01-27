@@ -1,0 +1,153 @@
+<!--
+You are free to copy and use this sample in accordance with the terms of the
+Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>
+      Price History
+    </title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1.1', {packages: ['corechart', 'controls']});
+    </script>
+    <script type="text/javascript">
+      var dashboard;
+      var control;
+      var chart;
+      function showRange() {
+          var state = control.getState();
+          var start = state.range.start;
+          var end = state.range.end;
+          alert(start + '\n' + end);
+      }
+     
+      // sets the min/max of the y axis to min/max
+      function setYAxis(max, min) {
+        //'vAxis': {'viewWindow': {'min': 0, 'max': 200}},
+        chart.setOption('vAxis.viewWindow.min',min);
+        chart.setOption('vAxis.viewWindow.max',max);
+        chart.draw();
+        alert('changed?');
+      }
+      
+      function drawVisualization() {
+        dashboard = new google.visualization.Dashboard(
+             document.getElementById('dashboard'));
+             
+        control = new google.visualization.ControlWrapper({
+          'controlType': 'ChartRangeFilter',
+          'containerId': 'control_div',
+          'options': {
+           // Filter by the date axis.
+           'filterColumnIndex': 1,
+           'ui': {
+             'chartType': 'LineChart',
+             'chartOptions': {
+             'chartArea': {'width': '90%'},
+             'hAxis': {'baselineColor': 'none'}
+             },
+             // Display a single series that shows the closing value of the stock.
+             // Thus, this view has two columns: the date (axis) and the stock value (line series).
+             'chartView': {
+             'columns': [1, 2]
+             },
+             // 1 day in milliseconds = 24 * 60 * 60 * 1000 = 86,400,000
+             'minRangeSize': 86400000
+           }
+          },
+          // Initial range: 2013-1-18 to 2013-1-20.
+          'state': {'range': {'start': new Date(2013, 0, 18), 'end': new Date(2013, 0, 20)}}
+        });
+
+        chart = new google.visualization.ChartWrapper({
+          'chartType': 'LineChart',
+          'containerId': 'chart_div',
+          'options': {
+           // Use the same chart area width as the control for axis alignment.
+           'chartArea': {'height': '80%', 'width': '90%'},
+           'hAxis': {'slantedText': false},
+           'vAxis': {'viewWindow': {'min': 0, 'max': 200}},
+           'legend': {'position': 'none'},
+           'pointSize': 6
+          },
+          // Convert the first column from 'date' to 'string'.
+          'view': {
+           'columns': [ 
+             {
+             'calc': function(dataTable, rowIndex) {
+               return dataTable.getFormattedValue(rowIndex, 1);
+             },
+             'type': 'string'
+             }, 2]
+          }
+        });
+      
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'model');
+        data.addColumn('date', 'Date');
+        data.addColumn('number', 'Sale Price');
+        
+        {% for productItem in productItems %}
+          var c = '{{ productItem.date|date:"m/d/Y" }}';
+          var d = new Date(c);
+          var model = '{{ productItem.model }}';
+          data.addRow( [model, d, {{ productItem.saleprice }}] );
+        {% endfor %}
+        
+        // get first and last dates
+        var numRows = data.getNumberOfRows();
+        var startDate = data.getValue(0,1);
+        var endDate = data.getValue(numRows-1,1);
+        
+        // SKU selector
+        var skuPicker = new google.visualization.ControlWrapper({
+          'controlType': 'CategoryFilter',
+          'containerId': 'control1',
+          'options': {
+            'filterColumnLabel': 'model',
+            'ui': {
+            'allowNone': false,
+            'labelStacking': 'vertical',
+            'allowTyping': false,
+            'allowMultiple': false
+            }
+          }
+        });
+        
+        // all SKU's
+        var skuData = new google.visualization.DataTable();
+        skuData.addColumn('string', 'model');
+        {% for model in modelList %}
+          skuData.addRow( [model] );
+        {% endfor %}
+        
+        //dashboard.bind(skuPicker, control).bind(control, chart);
+        dashboard.bind(control, chart);
+        dashboard.bind(skuPicker, chart);
+        dashboard.bind(skuPicker, control);
+        dashboard.draw(data);
+        
+        // set default start and end date
+        control.setState({'range.start': startDate, 'endDate': endDate});
+        //alert(startDate + '\n' + endDate);
+      }
+
+      google.setOnLoadCallback(drawVisualization);
+    </script>
+  </head>
+  <body>
+    <div id="dashboard">
+      <div id="chart_div" style='width: 915px; height: 300px;'></div>
+      <div id="control_div" style='width: 915px; height: 50px;'></div>
+      <div id="control1"></div>
+      <div id="control2"></div>
+      <div id="control3"></div>
+      <input type="button" onclick="showRange()" value="Show current range" />
+      <input type="button" onclick="setYAxis(400,0)" value="Change Y Axis" />
+    </div>
+  </body>
+</html>

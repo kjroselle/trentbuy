@@ -1,0 +1,8 @@
+cron:
+- description: Target Sports USA Job
+  url: /tsusa/
+  schedule: every 24 hours
+  
+- description: Newegg Job
+  url: /newegg/
+  schedule: every 24 hours

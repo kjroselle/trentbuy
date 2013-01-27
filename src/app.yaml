@@ -1,0 +1,25 @@
+application: trentbuy
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+handlers:
+- url: /tsusa/
+  script: tsusaScraper.app
+
+- url: /newegg/
+  script: neweggScraper.app
+  
+- url: /test/
+  script: tempIndex.app
+  
+- url: /.*
+  script: chart.app
+
+  
+libraries:
+- name: webapp2
+  version: latest
+- name: lxml
+  version: latest
